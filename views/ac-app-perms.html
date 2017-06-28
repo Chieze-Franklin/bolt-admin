@@ -1,0 +1,71 @@
+<div class="view-port clearfix" id="chat">
+  <div class="view bg-white">
+    <div data-init-list-view="ioslist" class="list-view boreded no-top-border">
+      <div class="list-view-group-container">
+        <ul>
+          {{#each permissions}}
+          <li class="chat-user-list clearfix">
+            <div class="checkbox check-success checkbox-circle">
+              {{#if granted}}
+              <input name="{{name}}" id="{{name}}" onclick="setPermission(this, '{{name}}', '{{displayName}}')" type="checkbox" checked>
+              {{else}}
+              <input name="{{name}}" id="{{name}}" onclick="setPermission(this, '{{name}}', '{{displayName}}')" type="checkbox">
+              {{/if}}
+              &nbsp;&nbsp;<label for="{{name}}"><b>{{displayName}}</b><br />{{description}}</label>
+            </div>
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+$(document).ready(function(){
+});
+
+function setPermission(elem, permission, permDisplayName) {
+  var appRole = {{{json appRole}}};
+  var appRolePermissions = appRole.permissions || [];
+  var title, message, execute = false;
+  if (elem.checked) {
+    if (appRolePermissions.indexOf(permission) == -1) {
+      appRolePermissions.push(permission);
+      title = "Permission granted!";
+      message = permDisplayName + " has been granted to {{role.displayName}}";
+      execute = true;
+    }
+  }
+  else {
+    if (appRolePermissions.indexOf(permission) > -1) {
+      var index = appRolePermissions.indexOf(permission);
+      appRolePermissions.splice(index, 1);
+      title = "Permission denied!";
+      message = permDisplayName + " has been denied to {{role.displayName}}";
+      execute = true;
+    }
+  }
+
+  if (execute) {
+    $.ajax({
+      url: "{{bolt_root}}/api/app-roles?app={{appRole.app}}&role={{appRole.role}}",
+      type: "PUT",
+      data: {permissions: appRolePermissions},
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+      },
+      success: function(response, status, xhr){
+        if(response.code == 0){
+          swal(title, message, "success");
+        }
+        else {
+          swal(response.errorUserTitle, response.errorUserMessage, "error");
+        }
+      },
+      error: function(xhr, status, err){
+        alert(xhr.responseText);
+      }
+    });
+  }
+}
+</script>

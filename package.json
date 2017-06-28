@@ -1,0 +1,49 @@
+{
+  "name": "bolt-admin",
+  "version": "0.0.1",
+  "description": "Default system administration app for Bolt",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chieze-Franklin/bolt-admin"
+  },
+  "author": "Chieze Franklin",
+  "bugs": {
+    "url": "https://github.com/Chieze-Franklin/bolt-admin/issues"
+  },
+  "homepage": "https://chieze-franklin.github.io/bolt-admin",
+  "dependencies": {
+    "body-parser": "^1.9.3",
+    "express": "^4.10.2"
+  },
+  "keywords": [
+    "bolt",
+    "admin",
+    "bolt-admin"
+  ],
+  "bolt": {
+    "displayName": "Admin",
+    "main": "bolt-server.js",
+    "dependencies": {
+      "bolt-ui-pages": "*",
+      "bolt-ui-sweetalert": "*"
+    },
+    "extensions": {
+      "/admin": "/"
+    },
+    "files": {
+      "icon": "ico/icon.png",
+      "favicon": "ico/favicon.ico"
+    },
+    "hooks": {
+      "bolt/app-starting": "/hooks/app-starting",
+      "bolt/user-logged-in": "/hooks/user-logged-in"
+    },
+    "index": "/",
+    "public": [
+      "ico"
+    ],
+    "system": true,
+    "tags": [ "main", "admin", "bolt-admin" ]
+  }
+}
