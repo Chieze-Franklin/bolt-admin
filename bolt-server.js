@@ -216,11 +216,13 @@ app.get('/ac/permissions/:app/:role', function (req, res) {
                     if (appRoles.length == 1) {
                       appRole = appRoles[0];
 
-                      permissions.forEach(function(permission) {
-                        if (appRole.permissions.indexOf(permission.name) != -1) {
-                          permission.granted = true;
-                        }
-                      });
+                      if (permissions) {
+                        permissions.forEach(function(permission) {
+                          if (appRole.permissions.indexOf(permission.name) != -1) {
+                            permission.granted = true;
+                          }
+                        });
+                      }
                     }
 
                     var scope = {

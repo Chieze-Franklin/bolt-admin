@@ -1,6 +1,6 @@
 {
   "name": "bolt-admin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Default system administration app for Bolt",
   "main": "server.js",
   "repository": {
@@ -44,6 +44,10 @@
       "ico"
     ],
     "system": true,
-    "tags": [ "main", "admin", "bolt-admin" ]
+    "tags": [
+      "main",
+      "admin",
+      "bolt-admin"
+    ]
   }
 }
