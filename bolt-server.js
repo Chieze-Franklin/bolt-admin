@@ -5,6 +5,8 @@ var fs = require('fs');
 var superagent = require('superagent');
 var session = require("client-sessions"/*"express-session"*/);
 
+var utils = require("bolt-internal-utils");
+
 //---helpers
 var __app = {
   displayName: "System Admin",
@@ -46,8 +48,17 @@ app.use(function(req, res, next){
     req.app_root = process.env.BOLT_ADDRESS + "/x/" +  __app.name;
     if (req.user) {
       if (!req.user.displayPic) req.user.displayPic = 'public/bolt/users/user.png';
+      next();
     }
-    next();
+    else {
+      if (req.originalUrl.indexOf('/hooks/') > 0) {
+        next();
+      }
+      else {
+        var success = encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl);
+        res.redirect(process.env.BOLT_ADDRESS + '/login?success=' + success + '&no_query=true'); //we don't want it to add any query string
+      }
+    }
   }
 });
 
@@ -63,197 +74,170 @@ app.post('/hooks/app-starting', function (req, res) {
 });
 
 app.get('/', function (req, res) {
-  if (req.user) {
-    var scope = {
-      app: __app,
-      app_root: req.app_root,
-      bolt_root: process.env.BOLT_ADDRESS,
-      section: __app.displayName,
-      user: req.user,
-      year: __year
-    };
-    res
-      .set('Content-type', 'text/html')
-      .render('index.html', scope);
-  }
-  else {
-    var success = encodeURIComponent(process.env.BOLT_ADDRESS + '/x/' + __app.name);
-    res.redirect(process.env.BOLT_ADDRESS + '/login?success=' + success);
-  }
+  var scope = {
+    app: __app,
+    app_root: req.app_root,
+    bolt_root: process.env.BOLT_ADDRESS,
+    section: __app.displayName,
+    user: req.user,
+    year: __year
+  };
+  res
+    .set('Content-type', 'text/html')
+    .render('index.html', scope);
 });
 
 //-------------ac
 app.get('/ac', function (req, res) {
-  if (req.user) {
-    //get registered apps
-    superagent
-      .get(process.env.BOLT_ADDRESS + '/api/apps?module=false')
-      .end(function(error, appsResponse){
-        //TODO: check error and appsResponse.body.error
-        var apps = appsResponse.body.body;
-        apps.sort(function(a, b){
-          var nameA = a.displayName || a.name;
-          var nameB = b.displayName || b.name;
+  //get registered apps
+  superagent
+    .get(process.env.BOLT_ADDRESS + '/api/apps?module=false')
+    .end(function(error, appsResponse){
+      //TODO: check error and appsResponse.body.error
+      var apps = appsResponse.body.body;
+      apps.sort(function(a, b){
+        var nameA = a.displayName || a.name;
+        var nameB = b.displayName || b.name;
 
-          if (nameA > nameB) return 1;
-          else if (nameA < nameB) return -1;
-          else return 0;
-        });
-
-        var scope = {
-          app: __app,
-          app_root: req.app_root,
-          bolt_root: process.env.BOLT_ADDRESS,
-          section: __app.displayName + " \u21D2 Access Control",
-          user: req.user,
-          year: __year,
-
-          apps: apps
-        };
-        res
-          .set('Content-type', 'text/html')
-          .render('ac.html', scope);
+        if (nameA > nameB) return 1;
+        else if (nameA < nameB) return -1;
+        else return 0;
       });
-  }
-  else {
-    var success = encodeURIComponent(process.env.BOLT_ADDRESS + '/x/' + __app.name + '/ac');
-    res.redirect(process.env.BOLT_ADDRESS + '/login?success=' + success);
-  }
+
+      var scope = {
+        app: __app,
+        app_root: req.app_root,
+        bolt_root: process.env.BOLT_ADDRESS,
+        section: __app.displayName + " \u21D2 Access Control",
+        user: req.user,
+        year: __year,
+
+        apps: apps
+      };
+      res
+        .set('Content-type', 'text/html')
+        .render('ac.html', scope);
+    });
 });
 
 app.get('/ac/:app', function (req, res) {
-  if (req.user) {
-    superagent
-      .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
-      .end(function(error, appResponse){
-        //TODO: check error and appResponse.body.error
-        var app = appResponse.body.body;
+  superagent
+    .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
+    .end(function(error, appResponse){
+      //TODO: check error and appResponse.body.error
+      var app = appResponse.body.body;
 
-        //get app-roles
-        superagent
-          .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app)
-          .end(function(error, appRolesResponse) {
-            //TODO: check error and appRolesResponse.body.error
-            var appRoles = appRolesResponse.body.body;
+      //get app-roles
+      superagent
+        .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app)
+        .end(function(error, appRolesResponse) {
+          //TODO: check error and appRolesResponse.body.error
+          var appRoles = appRolesResponse.body.body;
 
-            superagent
-              .get(process.env.BOLT_ADDRESS + '/api/roles')
-              .end(function(rolesError, rolesResponse) {
-                //TODO: check error and rolesResponse.body.error
-                var roles = rolesResponse.body.body;
-                var indicesToRemove = [];
-                for(var a = 0; a < appRoles.length; a++) {
-                  for (var b = 0; b < roles.length; b++) {
-                    if (appRoles[a].role == roles[b].name) {
-                      appRoles[a].roleInfo = roles[b];
-                      indicesToRemove.push(b);
-                      break;
-                    }
+          superagent
+            .get(process.env.BOLT_ADDRESS + '/api/roles')
+            .end(function(rolesError, rolesResponse) {
+              //TODO: check error and rolesResponse.body.error
+              var roles = rolesResponse.body.body;
+              var indicesToRemove = [];
+              indicesToRemove = appRoles.map(function(appRl, idx){
+                for (var index = 0; index < roles.length; index++) {
+                  if (appRl.role == roles[index].name) {
+                    appRl.roleInfo = roles[index];
+                    return index;
                   }
                 }
-                var filteredRoles = [];
-                for (var a = 0; a < roles.length; a++) {
-                  if (indicesToRemove.indexOf(a) == -1) {
-                    filteredRoles.push(roles[a]);
-                  }
-                }
-
-                var scope = {
-                  app: __app,
-                  app_root: req.app_root,
-                  bolt_root: process.env.BOLT_ADDRESS,
-                  section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ")",
-                  user: req.user,
-                  year: __year,
-
-                  current_app: app,
-                  controlledVisibility: app.controlledVisibility,
-                  roles: filteredRoles,
-                  rolesHasElements: (filteredRoles.length > 0),
-                  appRoles: appRoles
-                };
-                res
-                  .set('Content-type', 'text/html')
-                  .render('ac-app.html', scope);
               });
-          });
-      });
-  }
-  else {
-    var success = encodeURIComponent(process.env.BOLT_ADDRESS + '/x/' + __app.name + '/ac/' + req.params.app);
-    res.redirect(process.env.BOLT_ADDRESS + '/login?success=' + success);
-  }
+              var filteredRoles = [];
+              filteredRoles = roles.filter(function(r, index){
+                return indicesToRemove.indexOf(index) == -1;
+              });
+
+              var scope = {
+                app: __app,
+                app_root: req.app_root,
+                bolt_root: process.env.BOLT_ADDRESS,
+                section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ")",
+                user: req.user,
+                year: __year,
+
+                current_app: app,
+                controlledVisibility: app.controlledVisibility,
+                roles: filteredRoles,
+                rolesHasElements: (filteredRoles.length > 0),
+                appRoles: appRoles
+              };
+              res
+                .set('Content-type', 'text/html')
+                .render('ac-app.html', scope);
+            });
+        });
+    });
 });
 
 app.get('/ac/permissions/:app/:role', function (req, res) {
-  if (req.user) {
-    superagent
-      .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
-      .end(function(error, appResponse) {
-        //TODO: check error and appResponse.body.error
-        var app = appResponse.body.body;
+  superagent
+    .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
+    .end(function(error, appResponse) {
+      //TODO: check error and appResponse.body.error
+      var app = appResponse.body.body;
 
-        superagent
-          .get(process.env.BOLT_ADDRESS + '/api/roles/' + req.params.role)
-          .end(function(error, roleResponse) {
-            //TODO: check error and roleResponse.body.error
-            var role = roleResponse.body.body;
+      superagent
+        .get(process.env.BOLT_ADDRESS + '/api/roles/' + req.params.role)
+        .end(function(error, roleResponse) {
+          //TODO: check error and roleResponse.body.error
+          var role = roleResponse.body.body;
 
-            //get permissions
-            superagent
-              .get(process.env.BOLT_ADDRESS + '/api/permissions?app=' + req.params.app)
-              .end(function(error, permsResponse){
-                //TODO: check error and permsResponse.body.error
-                var permissions = permsResponse.body.body;
+          //get permissions
+          superagent
+            .get(process.env.BOLT_ADDRESS + '/api/permissions?app=' + req.params.app)
+            .end(function(error, permsResponse){
+              //TODO: check error and permsResponse.body.error
+              var permissions = permsResponse.body.body;
 
-                //get app-roles
-                superagent
-                  .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app + "&role=" + req.params.role)
-                  .end(function(error, appRolesResponse) {
-                    //TODO: check error and appRolesResponse.body.error
-                    var appRoles = appRolesResponse.body.body;
-                    var appRole;
-                    if (appRoles.length == 1) {
-                      appRole = appRoles[0];
+              //get app-roles
+              superagent
+                .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app + "&role=" + req.params.role)
+                .end(function(error, appRolesResponse) {
+                  //TODO: check error and appRolesResponse.body.error
+                  var appRoles = appRolesResponse.body.body;
+                  var appRole;
+                  if (appRoles.length == 1) {
+                    appRole = appRoles[0];
 
-                      if (permissions) {
-                        permissions.forEach(function(permission) {
-                          if (appRole.permissions.indexOf(permission.name) != -1) {
-                            permission.granted = true;
-                          }
-                        });
-                      }
+                    if (permissions) {
+                      permissions.forEach(function(permission) {
+                        if (appRole.permissions.indexOf(permission.name) != -1) {
+                          permission.granted = true;
+                        }
+                      });
                     }
+                  }
 
-                    var scope = {
-                      app: __app,
-                      app_root: req.app_root,
-                      bolt_root: process.env.BOLT_ADDRESS,
-                      section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ") \u21D2 Permissions for " + role.displayName,
-                      user: req.user,
-                      year: __year,
+                  var scope = {
+                    app: __app,
+                    app_root: req.app_root,
+                    bolt_root: process.env.BOLT_ADDRESS,
+                    section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ") \u21D2 Permissions for " + role.displayName,
+                    user: req.user,
+                    year: __year,
 
-                      current_app: app,
-                      permissions: permissions,
-                      appRole: appRole,
-                      role: role
-                    };
-                    res
-                      .set('Content-type', 'text/html')
-                      .render('ac-app-perms.html', scope);
-                  });
-              });
-          });
-      });
-  }
-  else {
-    var success = encodeURIComponent(process.env.BOLT_ADDRESS + '/x/' + __app.name + '/ac/permissions/' + req.params.app + '/' + req.params.role);
-    res.redirect(process.env.BOLT_ADDRESS + '/login?success=' + success);
-  }
+                    current_app: app,
+                    permissions: permissions,
+                    appRole: appRole,
+                    role: role
+                  };
+                  res
+                    .set('Content-type', 'text/html')
+                    .render('ac-app-perms.html', scope);
+                });
+            });
+        });
+    });
 });
 
 //-------------apps
-app.get('/apps', function (req, res) {
+app.get('/apps', function (req, res) {////////////////////////
   //get registered apps
   superagent
     .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/apps')
@@ -277,7 +261,7 @@ app.get('/apps', function (req, res) {
     });
 });
 
-app.get('/apps/:name', function (req, res) {
+app.get('/apps/:name', function (req, res) {////////////////////////
   //get app
   superagent
     .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/apps/' + req.params.name)
@@ -304,7 +288,7 @@ app.get('/apps/:name', function (req, res) {
     });
 });
 
-app.get('/apps-add', function (req, res) {
+app.get('/apps-add', function (req, res) {////////////////////////
   var scope = {
     app: __app,
     bolt:  __bolt,
@@ -318,7 +302,7 @@ app.get('/apps-add', function (req, res) {
     .render('apps-add.html', scope);
 });
 
-app.get('/apps-sideload/:path', function (req, res) {
+app.get('/apps-sideload/:path', function (req, res) {////////////////////////
   superagent
     .post(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/apps/reg-package')
     .send({ path: req.params.path })
@@ -356,7 +340,7 @@ app.get('/apps-sideload/:path', function (req, res) {
 });
 
 //-------------roles
-app.get('/roles', function (req, res) {
+app.get('/roles', function (req, res) {////////////////////////
   //get registered roles
   superagent
     .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/roles')
@@ -380,7 +364,7 @@ app.get('/roles', function (req, res) {
     });
 });
 
-app.get('/roles-add', function (req, res) {
+app.get('/roles-add', function (req, res) {////////////////////////
   var scope = {
     app: __app,
     bolt:  __bolt,
@@ -394,7 +378,7 @@ app.get('/roles-add', function (req, res) {
     .render('roles-add.html', scope);
 });
 
-app.get('/roles/:name', function (req, res) {
+app.get('/roles/:name', function (req, res) {////////////////////////
   //get role
   superagent
     .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/roles/' + req.params.name)
@@ -426,18 +410,18 @@ app.get('/roles/:name', function (req, res) {
 app.get('/users', function (req, res) {
   //get registered users
   superagent
-    .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/users')
+    .get(process.env.BOLT_ADDRESS + '/api/users')
     .end(function(error, usersResponse){
       //TODO: check error and usersResponse.body.error
       var users = usersResponse.body.body;
 
       var scope = {
         app: __app,
-        bolt:  __bolt,
-        user: __user,
+        app_root: req.app_root,
+        bolt_root: process.env.BOLT_ADDRESS,
+        section: __app.displayName + " \u21D2 Users (" + users.length + ")",
+        user: req.user,
         year: __year,
-
-        section: "Users (" + users.length + ")",
 
         users: users
       };
@@ -447,7 +431,7 @@ app.get('/users', function (req, res) {
     });
 });
 
-app.get('/users-add', function (req, res) {
+app.get('/users-add', function (req, res) {////////////////////////
   var scope = {
     app: __app,
     bolt:  __bolt,
@@ -461,53 +445,60 @@ app.get('/users-add', function (req, res) {
     .render('users-add.html', scope);
 });
 
-app.get('/users/roles/:username', function (req, res) {
-  //get user's roles
+app.get('/users/roles/:name', function (req, res) {
   superagent
-    .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/user-roles?user=' + req.params.username)
-    .end(function(error, userRolesResponse){
-      //TODO: check error and userRolesResponse.body.error
-      var userRoles = userRolesResponse.body.body;
+    .get(process.env.BOLT_ADDRESS + '/api/users/' + req.params.name)
+    .end(function(error, userResponse){
+      //TODO: check error and appResponse.body.error
+      var user = userResponse.body.body;
 
+      //get user's roles
       superagent
-        .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/roles')
-        .end(function(rolesError, rolesResponse){
-          var roles = rolesResponse.body.body;
-          var indicesToRem = [];
-          for(var a = 0; a < userRoles.length; a++) {
-            for (var b = 0; b < roles.length; b++) {
-              if (userRoles[a].role == roles[b].name) {
-                userRoles[a].roleInfo = roles[b];
-                indicesToRem.push(b);
-                break;
-              }
-            }
-          }
-          for(var a = indicesToRem.length - 1; a > -1; --a) {
-            roles.splice(indicesToRem[a], 1);
-          }
-          
-          var scope = {
-            app: __app,
-            bolt:  __bolt,
-            user: __user,
-            year: __year,
+        .get(process.env.BOLT_ADDRESS + '/api/user-roles?user=' + req.params.name)
+        .end(function(error, userRolesResponse){
+          //TODO: check error and userRolesResponse.body.error
+          var userRoles = userRolesResponse.body.body;
 
-            section: "User's Roles",
+          superagent
+            .get(process.env.BOLT_ADDRESS + '/api/roles')
+            .end(function(rolesError, rolesResponse){
+              var roles = rolesResponse.body.body;
+              var indicesToRem = [];
+              indicesToRemove = userRoles.map(function(appRl, idx){
+                for (var index = 0; index < roles.length; index++) {
+                  if (appRl.role == roles[index].name) {
+                    appRl.roleInfo = roles[index];
+                    return index;
+                  }
+                }
+              });
+              var filteredRoles = [];
+              filteredRoles = roles.filter(function(r, index){
+                return indicesToRemove.indexOf(index) == -1;
+              });
+              
+              var scope = {
+                app: __app,
+                app_root: req.app_root,
+                bolt_root: process.env.BOLT_ADDRESS,
+                section: __app.displayName + " \u21D2 Users \u21D2 " + user.displayName + " (" + user.name + ")",
+                user: req.user,
+                year: __year,
 
-            roles: roles,
-            rolesHasElements: (roles.length > 0),
-            userRoles: userRoles,
-            username: req.params.username
-          };
-          res
-            .set('Content-type', 'text/html')
-            .render('users-roles.html', scope);
+                current_user: user,
+                roles: filteredRoles,
+                rolesHasElements: (filteredRoles.length > 0),
+                userRoles: userRoles
+              };
+              res
+                .set('Content-type', 'text/html')
+                .render('users-roles.html', scope);
+            });
         });
     });
 });
 
-app.get('/users/:username', function (req, res) {
+app.get('/users/:username', function (req, res) {////////////////////////
   //get user
   superagent
     .get(__bolt.protocol + '://' + __bolt.host + ':' + __bolt.port + '/api/users/' + req.params.username)

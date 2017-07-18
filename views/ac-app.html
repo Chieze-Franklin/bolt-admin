@@ -28,8 +28,12 @@
             <a data-view-animation="push-parrallax" data-view-port="#chat" class="" href="{{../app_root}}/roles/{{role}}">
               <p class="p-l-10 col-xs-height col-middle col-xs-12 text-master">
                 {{roleInfo.displayName}} 
-                <a id="login-btn" class="btn btn-danger pull-right" onclick="deleteAppRole('{{role}}', '{{roleInfo.displayName}}')"><i class="fa fa-trash-o"></i></a>
-                <a id="login-btn" class="btn btn-primary pull-right" href="{{../app_root}}/ac/permissions/{{../current_app.name}}/{{role}}">App Permissions</a>
+                <span class="pull-right">
+                &nbsp;&nbsp;<a id="login-btn" class="btn btn-danger pull-right" onclick="deleteAppRole('{{role}}', '{{roleInfo.displayName}}')"><i class="fa fa-trash-o"></i></a>&nbsp;&nbsp;
+                </span>
+                <span class="pull-right">
+                &nbsp;&nbsp;<a id="login-btn" class="btn btn-primary" href="{{../app_root}}/ac/permissions/{{../current_app.name}}/{{role}}">App Permissions</a>&nbsp;&nbsp;
+                </span>
               </p>
             </a>
           </li>
@@ -113,8 +117,17 @@ function deleteAppRole(role, displayName) {
       },
       success: function(response, status, xhr){
         if(response.code == 0){
-          swal("Role deleted!", displayName + " has been deleted from this app's list of roles!", "success");
-          window.location.href="{{app_root}}/ac/{{current_app.name}}";
+          swal({
+            title: "Role deleted!",
+            text: displayName + " has been deleted from this app's list of roles!",
+            type: "success",
+            showCancelButton: false,
+            closeOnConfirm: true
+            }, function(isConfirm){
+              if (isConfirm) {
+                window.location.href="{{app_root}}/ac/{{current_app.name}}";
+              }
+            });
         }
         else {
           swal(response.errorUserTitle, response.errorUserMessage, "error");

@@ -32,12 +32,13 @@
 <script>
 $(document).ready(function(){
   $("#add_role").click(function(){
-      var user = "{{username}}";
-      var role = $("#select_role option:selected").val(); //or $("#select_role").find(":selected").text()
-      console.log({ user: user, role: role });
+      var user = "{{current_user.name}}";
+      var role = $("#select_role option:selected").val();
+      var roleDisplayName = $("#select_role option:selected").text()
+      
       //TODO: ensure role is not empty
       $.ajax({
-        url: "{{bolt.protocol}}://{{bolt.host}}:{{bolt.port}}/api/user-roles",
+        url: "{{bolt_root}}/api/user-roles",
         data: { user: user, role: role },
         type: "POST",
         beforeSend: function(xhr) {
@@ -45,8 +46,17 @@ $(document).ready(function(){
         },
         success: function(response, status, xhr){
           if(response.code == 0){
-            swal("Role added!", displayName + " has been added to this user's list of roles!", "success");
-            window.location.href="{{bolt.protocol}}://{{bolt.host}}:{{app.port}}/users/roles/{{username}}";
+            swal({
+              title: "Role added!",
+              text: roleDisplayName + " has been added to this user's list of roles!",
+              type: "success",
+              showCancelButton: false,
+              closeOnConfirm: true
+              }, function(isConfirm){
+                if (isConfirm) {
+                  window.location.href="{{app_root}}/users/roles/{{current_user.name}}";
+                }
+              });
           }
           else {
             swal(response.errorUserTitle, response.errorUserMessage, "error");
@@ -62,15 +72,24 @@ $(document).ready(function(){
 function deleteUserRole(role, displayName) {
   var doJob = function() {
     $.ajax({
-      url: "{{bolt.protocol}}://{{bolt.host}}:{{bolt.port}}/api/user-roles?user={{username}}&role=" + role,
+      url: "{{bolt_root}}/api/user-roles?user={{current_user.name}}&role=" + role,
       type: "DELETE",
       beforeSend: function(xhr) {
         xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
-          swal("Role deleted!", displayName + " has been deleted from this user's list of roles!", "success");
-          window.location.href="{{bolt.protocol}}://{{bolt.host}}:{{app.port}}/users/roles/{{username}}";
+          swal({
+            title: "Role deleted!",
+            text: displayName + " has been deleted from this user's list of roles!",
+            type: "success",
+            showCancelButton: false,
+            closeOnConfirm: true
+            }, function(isConfirm){
+              if (isConfirm) {
+                window.location.href="{{app_root}}/users/roles/{{current_user.name}}";
+              }
+            });
         }
         else {
           swal(response.errorUserTitle, response.errorUserMessage, "error");
