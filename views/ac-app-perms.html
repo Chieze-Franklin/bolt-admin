@@ -56,7 +56,8 @@ function setPermission(elem, permission, permDisplayName) {
       },
       success: function(response, status, xhr){
         if(response.code == 0){
-          swal(title, message, "success");
+          //swal(title, message, "success");
+          window.location.href = "{{app_root}}//ac/permissions/{{current_app.name}}/{{role.name}}";
         }
         else {
           swal(response.errorUserTitle, response.errorUserMessage, "error");

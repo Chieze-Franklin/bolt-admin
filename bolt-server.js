@@ -47,7 +47,7 @@ app.use(function(req, res, next){
   else {
     req.app_root = process.env.BOLT_ADDRESS + "/x/" +  __app.name;
     if (req.user) {
-      if (!req.user.displayPic) req.user.displayPic = 'public/bolt/users/user.png';
+      if (!req.user.displayPic) req.user.displayPic = process.env.BOLT_ADDRESS + 'public/bolt/uploads/user.png';
       next();
     }
     else {
