@@ -253,6 +253,105 @@ var controller = {
 			});
 	},
 
+	getRoles: function(req, res){
+		//get registered roles
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/roles')
+			.end(function(error, rolesResponse){
+				//TODO: check error and rolesResponse.body.error
+				var roles = rolesResponse.body.body;
+				//TODO: check if app has updates, show the Update button if true
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Roles (" + roles.length + ")",
+					user: req.user,
+					year: year,
+
+					roles: roles
+				};
+				res
+					.set('Content-type', 'text/html')
+					.render('roles.html', scope);
+			});
+	},
+
+	getRoleByName: function(req, res){
+		//get role
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/roles/' + req.params.name)
+			.end(function(error, appResponse){
+				//TODO: check error and appResponse.body.error
+				var role = appResponse.body.body;
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Roles  \u21D2 <unrecognised role>",
+					user: req.user,
+					year: year
+				};
+				if (role) {
+					scope.section = appdisplayname + " \u21D2 Roles  \u21D2 " + role.displayName;
+					scope.role = role;
+				}
+
+				res
+					.set('Content-type', 'text/html')
+					.render('role.html', scope);
+			});
+	},
+
+	getAddRole: function(req, res){
+		var scope = {
+			app_display_name: appdisplayname,
+			app_name: appname,
+			app_root: req.app_root,
+			app_token: apptoken,
+			bolt_root: process.env.BOLT_ADDRESS,
+			section: appdisplayname + " \u21D2 Roles \u21D2 New Role",
+			user: req.user,
+			year: year
+		};
+		res
+			.set('Content-type', 'text/html')
+			.render('roles-add.html', scope);
+	},
+
+	getEditRole: function(req, res){
+		//get role
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/roles/' + req.params.name)
+			.end(function(error, appResponse){
+				//TODO: check error and appResponse.body.error
+				var role = appResponse.body.body;
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Roles  \u21D2 Edit Role",
+					user: req.user,
+					year: year,
+
+					role: role
+				};
+
+				res
+					.set('Content-type', 'text/html')
+					.render('roles-edit.html', scope);
+			});
+	},
+
 	postHookBoltAppStarting: function(req, res){
 		var event = req.body;
 		appname = event.body.appName;

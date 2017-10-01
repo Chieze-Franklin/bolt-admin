@@ -18,6 +18,14 @@ router.get('/apps/:name', controller.getAppByName);
 
 router.post('/hook/bolt/app-starting', controller.postHookBoltAppStarting);
 
+router.get('/roles', controller.getRoles);
+
+router.get('/roles/:name', controller.getRoleByName);
+
+router.get('/roles/edit/:name', controller.getEditRole);
+
+router.get('/roles-add', controller.getAddRole);
+
 //------404
 router.get('*', controller.get404);
 

@@ -6,7 +6,7 @@
           <div class="col-sm-12">
             <div class="form-group form-group-default">
               <label>Role name</label>
-              <input type="text" name="title" id="title" placeholder="must be unique in the system" class="form-control" required>
+              <input type="text" name="title" id="title" value="{{role.displayName}}" class="form-control" required>
             </div>
           </div>
         </div>
@@ -15,7 +15,7 @@
           <div class="col-sm-12">
             <div class="form-group form-group-default">
               <label>Role Description</label>
-              <input type="text" name="description" id="description" placeholder="simple description" class="form-control">
+              <input type="text" name="description" id="description" value="{{role.description}}" class="form-control">
             </div>
           </div>
         </div>
@@ -23,13 +23,13 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="checkbox check-success checkbox-circle">
-              <input name="isadmin" id="isadmin" type="checkbox">
+              <input name="isadmin" id="isadmin" type="checkbox" {{#if role.isAdmin}}checked{{/if}}>
               <label for="isadmin">Is Admin</label>
             </div>
           </div>
         </div>
 
-        <button class="btn btn-primary btn-cons m-t-10" name="submit" id="submit">Create new role</button>
+        <button class="btn btn-primary btn-cons m-t-10" name="submit" id="submit">Save</button>
       </div>
     </div>
   </div>
@@ -45,23 +45,19 @@ $(document).ready(function(){
         title=$("#title").val();
         description=$("#description").val();
         isadmin=$("#isadmin").is(":checked");
-        var name = title.toLowerCase();
-        while (name.indexOf(" ") > -1 || name.indexOf("/") > -1 || name.indexOf("\\") > -1 || name.indexOf("?") > -1) {
-          name = name.replace(" ", "-").replace("/", "-").replace("\\", "-").replace("?", "-");
-        }
         /*
         * Perform some validation here.
         */
         $.ajax({
-          url: "{{bolt_root}}/api/roles",
-          data: { name: name, displayName: title, description: description, isAdmin: isadmin },
-          type: "POST",
+          url: "{{bolt_root}}/api/roles?name={{role.name}}",
+          data: { displayName: title, description: description, isAdmin: isadmin },
+          type: "PUT",
           beforeSend: function(xhr) {
             xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
           },
           success: function(response, status, xhr){
             if(response.code == 0){
-              sweetAlert("Role created!", response.body.displayName + " has been created!", "success");
+              sweetAlert("Role updated!", title + " has been updated!", "success");
               window.location.href="{{app_root}}/roles";
             }
             else {
