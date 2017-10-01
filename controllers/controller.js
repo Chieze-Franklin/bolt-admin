@@ -194,6 +194,65 @@ var controller = {
 			});
 	},
 
+	getApps: function(req, res){
+		//get registered apps
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/apps')
+			.end(function(error, appsResponse){
+				//TODO: check error and appsResponse.body.error
+				var apps = appsResponse.body.body;
+				//TODO: check if app has updates, show the Update button if true
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Apps (" + apps.length + ")",
+					user: req.user,
+					year: year,
+
+					apps: apps
+				};
+				res
+					.set('Content-type', 'text/html')
+					.render('apps.html', scope);
+			});
+	},
+
+	getAppByName: function(req, res){
+		//get app
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.name)
+			.end(function(error, appResponse){
+				//TODO: check error and appResponse.body.error
+				var app = appResponse.body.body;
+				//TODO: get if app is outdated
+				var outdated = false;
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Apps  \u21D2 <unrecognised app>",
+					user: req.user,
+					year: year
+				};
+				if (app) {
+					scope.section = appdisplayname + " \u21D2 Apps  \u21D2 " + app.displayName + " (" + app.name + ")";
+					scope.current_app = app;
+					scope.outdated = outdated;
+				}
+
+				res
+					.set('Content-type', 'text/html')
+					.render('app.html', scope);
+			});
+	},
+
 	postHookBoltAppStarting: function(req, res){
 		var event = req.body;
 		appname = event.body.appName;

@@ -2,29 +2,40 @@
   <div class="container-sm-height full-height">
     <div class="row row-sm-height">
       <div class="col-sm-12 col-sm-height col-middle">
+        <!-- <div class="row">
+          <div class="col-sm-12">
+            <img src="{{bolt_root}}/files/{{current_app.name}}/icon" width="20" height="20">
+          </div>
+        </div> -->
+
         <div class="row">
           <div class="col-sm-12">
-            <div class="form-group form-group-default">
-              <label>{{boltApp.displayName}}</label>
-            </div>
+            <h1>
+              <img src="{{bolt_root}}/files/{{current_app.name}}/icon" width="25" height="25">
+              <b>{{current_app.displayName}}</b>
+            </h1>
           </div>
         </div>
 
         <div class="row">
           <div class="col-sm-12">
-            <div class="form-group form-group-default">
-              {{boltApp.description}}
-            </div>
+            {{current_app.description}}
           </div>
         </div>
 
         <div class="row">
           <div class="col-sm-12">
-            <div class="form-group form-group-default">
-              <label>{{boltApp.version}}</label>
-            </div>
+            <label>Version {{current_app.version}}</label>
           </div>
         </div>
+
+        {{#if outdated}}
+        <div class="row">
+          <div class="col-sm-12">
+            <a type="submit" class="btn btn-primary" href="{{bolt_root}}/update?app={{current_app.name}}"><i class="fa fa-refresh"></i> Update</a>
+          </div>
+        </div>
+        {{/if}}
       </div>
     </div>
   </div>
