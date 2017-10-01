@@ -36,8 +36,8 @@
       "favicon": "ico/favicon.ico"
     },
     "hooks": {
-      "bolt/app-starting": "/hooks/app-starting",
-      "bolt/user-logged-in": "/hooks/user-logged-in"
+      "bolt/app-starting": "/hook/bolt/app-starting",
+      "bolt/user-logged-in": "/hook/bolt/user-logged-in"
     },
     "index": "/",
     "public": [

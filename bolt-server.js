@@ -1,28 +1,20 @@
+var express = require('express');
 var bodyParser = require('body-parser');
 var exphbs = require('express-handlebars');
-var express = require('express');
 var fs = require('fs');
-var superagent = require('superagent');
-var session = require("client-sessions"/*"express-session"*/);
 
-var utils = require("bolt-internal-utils");
-
-//---helpers
-var __app = {
-  displayName: "System Admin",
-  name: "bolt-admin"
-};
-var __year = new Date().getFullYear();
+var controller = require('./controllers/controller');
+var router = require('./routers/router');
 
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(function (request, response, next) {
+/*app.use(function (request, response, next) {
   response.header('Access-Control-Allow-Origin', '*');
   response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 
   next();
-});
+});*/
 
 app.use('/', express.static(__dirname));
 app.use('**/assets', express.static(__dirname + '/assets'));
@@ -41,17 +33,17 @@ app.engine('html', exphbs.create({
 app.set('view engine', 'html');
 
 app.use(function(req, res, next){
-  if (process.env.BOLT_CHILD_PROC) {
+  if (process.env.BOLT_CHILD_PROC) { //check to be sure it is running as a system app
     res.send("This app has to run as a system app.");
   }
-  else {
-    req.app_root = process.env.BOLT_ADDRESS + "/x/" +  __app.name;
+  else { //check for logged-in user
+    req.app_root = process.env.BOLT_ADDRESS + "/x/" + controller.getAppName();
     if (req.user) {
       if (!req.user.displayPic) req.user.displayPic = process.env.BOLT_ADDRESS + 'public/bolt/uploads/user.png';
       next();
     }
-    else {
-      if (req.originalUrl.indexOf('/hooks/') > 0) {
+    else { //there is no logged-in user
+      if (req.originalUrl.indexOf('/hook/') > 0 || req.originalUrl.indexOf('/action/') > 0) {
         next();
       }
       else {
@@ -62,180 +54,9 @@ app.use(function(req, res, next){
   }
 });
 
-app.post('/hooks/app-starting', function (req, res) { 
-  var event = req.body;
-  //__app.port = event.body.appPort,
-  __app.token = event.body.appToken;
-  __app.name = event.body.appName || __app.name;
-  //__bolt.protocol = event.body.protocol,
-  //__bolt.host = event.body.host;
-  //__bolt.port = event.body.port;
-  res.send();
-});
+app.use(router);
 
-app.get('/', function (req, res) {
-  var scope = {
-    app: __app,
-    app_root: req.app_root,
-    bolt_root: process.env.BOLT_ADDRESS,
-    section: __app.displayName,
-    user: req.user,
-    year: __year
-  };
-  res
-    .set('Content-type', 'text/html')
-    .render('index.html', scope);
-});
-
-//-------------ac
-app.get('/ac', function (req, res) {
-  //get registered apps
-  superagent
-    .get(process.env.BOLT_ADDRESS + '/api/apps?module=false')
-    .end(function(error, appsResponse){
-      //TODO: check error and appsResponse.body.error
-      var apps = appsResponse.body.body;
-      apps.sort(function(a, b){
-        var nameA = a.displayName || a.name;
-        var nameB = b.displayName || b.name;
-
-        if (nameA > nameB) return 1;
-        else if (nameA < nameB) return -1;
-        else return 0;
-      });
-
-      var scope = {
-        app: __app,
-        app_root: req.app_root,
-        bolt_root: process.env.BOLT_ADDRESS,
-        section: __app.displayName + " \u21D2 Access Control",
-        user: req.user,
-        year: __year,
-
-        apps: apps
-      };
-      res
-        .set('Content-type', 'text/html')
-        .render('ac.html', scope);
-    });
-});
-
-app.get('/ac/:app', function (req, res) {
-  superagent
-    .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
-    .end(function(error, appResponse){
-      //TODO: check error and appResponse.body.error
-      var app = appResponse.body.body;
-
-      //get app-roles
-      superagent
-        .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app)
-        .end(function(error, appRolesResponse) {
-          //TODO: check error and appRolesResponse.body.error
-          var appRoles = appRolesResponse.body.body;
-
-          superagent
-            .get(process.env.BOLT_ADDRESS + '/api/roles')
-            .end(function(rolesError, rolesResponse) {
-              //TODO: check error and rolesResponse.body.error
-              var roles = rolesResponse.body.body;
-              var indicesToRemove = [];
-              indicesToRemove = appRoles.map(function(appRl, idx){
-                for (var index = 0; index < roles.length; index++) {
-                  if (appRl.role == roles[index].name) {
-                    appRl.roleInfo = roles[index];
-                    return index;
-                  }
-                }
-              });
-              var filteredRoles = [];
-              filteredRoles = roles.filter(function(r, index){
-                return indicesToRemove.indexOf(index) == -1;
-              });
-
-              var scope = {
-                app: __app,
-                app_root: req.app_root,
-                bolt_root: process.env.BOLT_ADDRESS,
-                section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ")",
-                user: req.user,
-                year: __year,
-
-                current_app: app,
-                controlledVisibility: app.controlledVisibility,
-                roles: filteredRoles,
-                rolesHasElements: (filteredRoles.length > 0),
-                appRoles: appRoles
-              };
-              res
-                .set('Content-type', 'text/html')
-                .render('ac-app.html', scope);
-            });
-        });
-    });
-});
-
-app.get('/ac/permissions/:app/:role', function (req, res) {
-  superagent
-    .get(process.env.BOLT_ADDRESS + '/api/apps/' + req.params.app)
-    .end(function(error, appResponse) {
-      //TODO: check error and appResponse.body.error
-      var app = appResponse.body.body;
-
-      superagent
-        .get(process.env.BOLT_ADDRESS + '/api/roles/' + req.params.role)
-        .end(function(error, roleResponse) {
-          //TODO: check error and roleResponse.body.error
-          var role = roleResponse.body.body;
-
-          //get permissions
-          superagent
-            .get(process.env.BOLT_ADDRESS + '/api/permissions?app=' + req.params.app)
-            .end(function(error, permsResponse){
-              //TODO: check error and permsResponse.body.error
-              var permissions = permsResponse.body.body;
-
-              //get app-roles
-              superagent
-                .get(process.env.BOLT_ADDRESS + '/api/app-roles?app=' + req.params.app + "&role=" + req.params.role)
-                .end(function(error, appRolesResponse) {
-                  //TODO: check error and appRolesResponse.body.error
-                  var appRoles = appRolesResponse.body.body;
-                  var appRole;
-                  if (appRoles.length == 1) {
-                    appRole = appRoles[0];
-
-                    if (permissions) {
-                      permissions.forEach(function(permission) {
-                        if (appRole.permissions.indexOf(permission.name) != -1) {
-                          permission.granted = true;
-                        }
-                      });
-                    }
-                  }
-
-                  var scope = {
-                    app: __app,
-                    app_root: req.app_root,
-                    bolt_root: process.env.BOLT_ADDRESS,
-                    section: __app.displayName + " \u21D2 Access Control \u21D2 " + app.displayName + " (" + app.name + ") \u21D2 Permissions for " + role.displayName,
-                    user: req.user,
-                    year: __year,
-
-                    current_app: app,
-                    permissions: permissions,
-                    appRole: appRole,
-                    role: role
-                  };
-                  res
-                    .set('Content-type', 'text/html')
-                    .render('ac-app-perms.html', scope);
-                });
-            });
-        });
-    });
-});
-
+/*
 //-------------apps
 app.get('/apps', function (req, res) {////////////////////////
   //get registered apps
@@ -523,6 +344,6 @@ app.get('/users/:username', function (req, res) {////////////////////////
         .set('Content-type', 'text/html')
         .render('user.html', scope);
     });
-});
+});*/
 
 module.exports = app;

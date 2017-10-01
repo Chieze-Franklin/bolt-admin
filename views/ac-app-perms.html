@@ -52,7 +52,7 @@ function setPermission(elem, permission, permDisplayName) {
       type: "PUT",
       data: {permissions: appRolePermissions},
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){

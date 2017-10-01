@@ -3,13 +3,13 @@
   <head>
     <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
     <meta charset="utf-8" />
-    <title>{{app.displayName}}</title>
+    <title>{{app_display_name}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <link rel="apple-touch-icon" href="{{bolt_root}}/public/{{app.name}}/ico/60.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="{{bolt_root}}/public/{{app.name}}/ico/76.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="{{bolt_root}}/public/{{app.name}}/ico/120.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="{{bolt_root}}/public/{{app.name}}/ico/152.png">
-    <link rel="icon" href="{{bolt_root}}/public/{{app.name}}/ico/favicon.ico" />
+    <link rel="apple-touch-icon" href="{{bolt_root}}/public/{{app_name}}/ico/60.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{bolt_root}}/public/{{app_name}}/ico/76.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{bolt_root}}/public/{{app_name}}/ico/120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{bolt_root}}/public/{{app_name}}/ico/152.png">
+    <link rel="icon" href="{{bolt_root}}/public/{{app_name}}/ico/favicon.ico" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-touch-fullscreen" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -55,7 +55,7 @@
       </div>
       <!-- BEGIN SIDEBAR HEADER -->
       <div class="sidebar-header">
-        <span class="bold">{{app.displayName}}</span>
+        <span class="bold">{{app_display_name}}</span>
         <div class="sidebar-header-controls">
           <button data-pages-toggle="#appMenu" class="btn btn-xs sidebar-slide-toggle btn-link m-l-20" type="button"><i class="fa fa-angle-down fs-16"></i>
           </button>
@@ -117,7 +117,7 @@
           <div class="pull-center hidden-md hidden-lg">
             <div class="header-inner">
               <div class="brand inline">
-                <img src="{{bolt_root}}/public/{{app.name}}/ico/icon.png" alt="logo" width="78" height="22">
+                <img src="{{bolt_root}}/public/{{app_name}}/ico/icon.png" alt="logo" width="78" height="22">
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@
             </span>
               </button>
               <ul class="dropdown-menu profile-dropdown" role="menu">
-                <li><a href="{{bolt_root}}/profile" target="main_frame"><i class="fa fa-user"></i> {{user.displayName}}</a></li>
+                <li><a href="{{bolt_root}}/@{{user.name}}" target="main_frame"><i class="fa fa-user"></i> {{user.displayName}}</a></li>
                 <li class="bg-master-lighter">
                   <a href="{{bolt_root}}/logout" class="clearfix">
                     <span class="pull-left">Logout</span>

@@ -1,13 +1,17 @@
 <div class="view-port clearfix" id="chat">
   <div class="view bg-white">
     <div data-init-list-view="ioslist" class="list-view boreded no-top-border">
-      <br />
-      {{#if rolesHasElements}}
-      <select class="cs-select cs-skin-slide" data-init-plugin="cs-select" id="select_role">
-        {{#each roles}}
-        <option value="{{name}}">{{displayName}}</option>
-        {{/each}}
-      </select>
+      <span>
+        <br />
+        Specify roles that can interact with this app
+        <br />
+        {{#if rolesHasElements}}
+        <select class="cs-select cs-skin-slide" data-init-plugin="cs-select" id="select_role">
+          {{#each roles}}
+          <option value="{{name}}">{{displayName}}</option>
+          {{/each}}
+        </select>
+      </span>
 
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-primary btn-cons m-t-10" name="add_role" id="add_role"><i class="fa fa-plus"></i> Add</button></span>
       {{/if}}
@@ -54,7 +58,7 @@ $(document).ready(function(){
       data: { controlledVisibility: controlledVis },
       type: "PUT",
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
@@ -80,7 +84,7 @@ $(document).ready(function(){
         data: { app: app, role: role },
         type: "POST",
         beforeSend: function(xhr) {
-          xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+          xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
         },
         success: function(response, status, xhr){
           if(response.code == 0){
@@ -113,7 +117,7 @@ function deleteAppRole(role, displayName) {
       url: "{{bolt_root}}/api/app-roles?app={{current_app.name}}&role=" + role,
       type: "DELETE",
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
