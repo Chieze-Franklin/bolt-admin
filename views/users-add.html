@@ -2,8 +2,8 @@
   <div class="container-sm-height full-height">
     <div class="row row-sm-height">
       <div class="col-sm-12 col-sm-height col-middle">
-        <form id="form-register" enctype="multipart/form-data" 
-          method="post" action="{{bolt.protocol}}://{{bolt.host}}:{{bolt.port}}/api/users">
+        <!-- <form id="form-register" enctype="multipart/form-data" method="post" action="{{bolt_root}}/api/users"> -->
+        <form id="form-register">
           <div class="row">
             <div class="col-sm-12">
               <div class="form-group form-group-default">
@@ -133,34 +133,64 @@ $(document).ready(function(){
       var username = $("#name").val();
       var password = $("#password").val();
       var displayname = $("#dn").val();
+      var con_password=$("#confirm_password").val();
       var email = $("#email").val();
       var phone = $("#phone").val();
-      /*
-      * Perform some validation here.
-      */
+      
+      if (!username || !password || !displayname) {
+        sweetAlert("Error", "Username or password or display name not supplied!", "error");
+        return;
+      }
+      
+      if (password !== con_password) {
+        sweetAlert("Error", "Password and confirmation password do not match!", "error");
+        return;
+      }
 
-      formData.append('name', username);
-      formData.append('password', password);
-      formData.append('dn', displayname);
-      formData.append('email', email);
-      formData.append('phone', phone);
+      var user = {
+        name: username,
+        password: password,
+        displayName: displayname,
+        email: email,
+        phone: phone
+      };
 
+      //upload picture
       $.ajax({
-        url: '{{bolt.protocol}}://{{bolt.host}}:{{bolt.port}}/api/users',
+        url: '/public/upload',
         type: 'POST',
         data: formData,
         processData: false,
         contentType: false, //'multipart/form-data',
         beforeSend: function(xhr) {
-          xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+          xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
         },
         success: function(response){
-          if(response.code == 0){
-            sweetAlert("User created!", response.body.displayName + " has been created!", "success");
-            window.location.href="{{bolt.protocol}}://{{bolt.host}}:{{app.port}}/users";
+          if(response.code === 0) {
+            if (response.body.length > 0) user.displayPic = response.body[0].url;
+
+            //add the user
+            $.ajax({
+              url: '/api/users',
+              type: 'POST',
+              data: user,
+              headers: {'X-Bolt-App-Token': '{{app_token}}'},
+              success: function(response1){
+                if(response1.code == 0){
+                  sweetAlert("User created!", response1.body.displayName + " has been created!", "success");
+                  window.location.href="{{app_root}}/users";
+                }
+                else {
+                  sweetAlert(response1.errorUserTitle, response1.errorUserMessage, "error");
+                }
+              },
+              error: function(xhr1, status1, err1){
+                alert(xhr1.responseText);
+              }
+            });
           }
           else {
-            sweetAlert(response.errorUserTitle, response.errorUserMessage, "error");
+              swal(response.errorUserTitle, response.errorUserMessage, "error");
           }
         },
         error: function(xhr, status, err){

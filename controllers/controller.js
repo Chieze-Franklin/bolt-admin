@@ -260,7 +260,6 @@ var controller = {
 			.end(function(error, rolesResponse){
 				//TODO: check error and rolesResponse.body.error
 				var roles = rolesResponse.body.body;
-				//TODO: check if app has updates, show the Update button if true
 
 				var scope = {
 					app_display_name: appdisplayname,
@@ -350,6 +349,132 @@ var controller = {
 					.set('Content-type', 'text/html')
 					.render('roles-edit.html', scope);
 			});
+	},
+
+	getUsers: function(req, res){
+		//get registered users
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/users')
+			.end(function(error, rolesResponse){
+				//TODO: check error and rolesResponse.body.error
+				var users = rolesResponse.body.body;
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Users (" + users.length + ")",
+					user: req.user,
+					year: year,
+
+					users: users
+				};
+				res
+					.set('Content-type', 'text/html')
+					.render('users.html', scope);
+			});
+	},
+
+	getUserRoles: function(req, res){
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/users/' + req.params.name)
+			.end(function(error, userResponse){
+				//TODO: check error and appResponse.body.error
+				var user = userResponse.body.body;
+
+				//get user's roles
+				superagent
+					.get(process.env.BOLT_ADDRESS + '/api/user-roles?user=' + req.params.name)
+					.end(function(error, userRolesResponse){
+						//TODO: check error and userRolesResponse.body.error
+						var userRoles = userRolesResponse.body.body;
+
+						superagent
+							.get(process.env.BOLT_ADDRESS + '/api/roles')
+							.end(function(rolesError, rolesResponse){
+								var roles = rolesResponse.body.body;
+								var indicesToRem = [];
+								indicesToRemove = userRoles.map(function(appRl, idx){
+									for (var index = 0; index < roles.length; index++) {
+										if (appRl.role == roles[index].name) {
+											appRl.roleInfo = roles[index];
+											return index;
+										}
+									}
+								});
+								var filteredRoles = [];
+								filteredRoles = roles.filter(function(r, index){
+									return indicesToRemove.indexOf(index) == -1;
+								});
+
+								var scope = {
+									app_display_name: appdisplayname,
+									app_name: appname,
+									app_root: req.app_root,
+									app_token: apptoken,
+									bolt_root: process.env.BOLT_ADDRESS,
+									section: appdisplayname + " \u21D2 Users \u21D2 " + user.displayName + " (" + user.name + ") \u21D2 Roles",
+									user: req.user,
+									year: year,
+
+									current_user: user,
+									roles: filteredRoles,
+									rolesHasElements: (filteredRoles.length > 0),
+									userRoles: userRoles
+								};
+								res
+									.set('Content-type', 'text/html')
+									.render('users-roles.html', scope);
+							});
+					});
+			});
+	},
+
+	getUserByName: function(req, res){
+		//get user
+		superagent
+			.get(process.env.BOLT_ADDRESS + '/api/users/' + req.params.name)
+			.end(function(error, appResponse){
+				//TODO: check error and appResponse.body.error
+				var user = appResponse.body.body;
+
+				var scope = {
+					app_display_name: appdisplayname,
+					app_name: appname,
+					app_root: req.app_root,
+					app_token: apptoken,
+					bolt_root: process.env.BOLT_ADDRESS,
+					section: appdisplayname + " \u21D2 Users  \u21D2 <unrecognised user>",
+					user: req.user,
+					year: year
+				};
+				if (user) {
+					scope.section = appdisplayname + " \u21D2 Users  \u21D2 " + user.displayName + " (" + user.name + ")";
+					scope.current_user = user;
+				}
+
+				res
+					.set('Content-type', 'text/html')
+					.render('user.html', scope);
+			});
+	},
+
+	getAddUser: function(req, res){
+		var scope = {
+			app_display_name: appdisplayname,
+			app_name: appname,
+			app_root: req.app_root,
+			app_token: apptoken,
+			bolt_root: process.env.BOLT_ADDRESS,
+			section: appdisplayname + " \u21D2 Users \u21D2 New User",
+			user: req.user,
+			year: year
+		};
+		res
+			.set('Content-type', 'text/html')
+			.render('users-add.html', scope);
 	},
 
 	postHookBoltAppStarting: function(req, res){

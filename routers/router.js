@@ -26,6 +26,14 @@ router.get('/roles/edit/:name', controller.getEditRole);
 
 router.get('/roles-add', controller.getAddRole);
 
+router.get('/users', controller.getUsers);
+
+router.get('/users/roles/:name', controller.getUserRoles);
+
+router.get('/users/:name', controller.getUserByName);
+
+router.get('/users-add', controller.getAddUser);
+
 //------404
 router.get('*', controller.get404);
 

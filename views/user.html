@@ -4,8 +4,10 @@
       <div class="col-sm-12 col-sm-height col-middle">
         <div class="row">
           <div class="col-sm-12">
-            <div class="form-group form-group-default">
-              <label>{{boltUser.displayName}}</label>
+            <div class="panel panel-default">
+              <div class="panel-body">
+                <img id="imgPrev" class="img img-responsive" width="200" height="200" src="{{current_user.displayPic}}">
+              </div>
             </div>
           </div>
         </div>
@@ -13,7 +15,7 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="form-group form-group-default">
-              <label>Visits: {{boltUser.visits}}</label>
+              <label>{{current_user.displayName}}</label>
             </div>
           </div>
         </div>
@@ -21,7 +23,15 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="form-group form-group-default">
-              <label>Blocked: {{#if boltUser.isBlocked}}True{{else}}False{{/if}}</label>
+              <label>Log Ins: {{current_user.visits}}</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="form-group form-group-default">
+              <label>Blocked: {{#if current_user.isBlocked}}True{{else}}False{{/if}}</label>
             </div>
           </div>
         </div>

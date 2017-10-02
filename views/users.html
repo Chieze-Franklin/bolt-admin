@@ -40,7 +40,7 @@ function deleteUser(username, displayName) {
       url: "{{bolt_root}}/api/users/" + username,
       type: "DELETE",
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
@@ -76,7 +76,7 @@ function resetUser(username, displayName) {
       type: "POST",
       data: { name: username, password: username.toLowerCase() },
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
@@ -113,7 +113,7 @@ function blockUser(username, displayName) {
       data: { isBlocked: true },
       type: "PUT",
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
@@ -149,7 +149,7 @@ function unblockUser(username, displayName) {
       data: { isBlocked: false },
       type: "PUT",
       beforeSend: function(xhr) {
-        xhr.setRequestHeader('X-Bolt-App-Token', '{{app.token}}');
+        xhr.setRequestHeader('X-Bolt-App-Token', '{{app_token}}');
       },
       success: function(response, status, xhr){
         if(response.code == 0){
