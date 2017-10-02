@@ -6,33 +6,33 @@ var middleware = require('../controllers/middleware');
 
 router.get('/', controller.getIndex);
 
-router.get('/ac', controller.getAccessControl);
+router.get('/ac', middleware.checkForEditAccessControlPermission, controller.getAccessControl);
 
-router.get('/ac/:app', controller.getAccessControlForApp);
+router.get('/ac/:app', middleware.checkForEditAccessControlPermission, controller.getAccessControlForApp);
 
-router.get('/ac/permissions/:app/:role', controller.getAccessControlPermissionsForApp);
+router.get('/ac/permissions/:app/:role', middleware.checkForEditAccessControlPermission, controller.getAccessControlPermissionsForApp);
 
-router.get('/apps', controller.getApps);
+router.get('/apps', middleware.checkForEditAppsPermission, controller.getApps);
 
-router.get('/apps/:name', controller.getAppByName);
+router.get('/apps/:name', middleware.checkForEditAppsPermission, controller.getAppByName);
+
+router.get('/roles', middleware.checkForEditRolesPermission, controller.getRoles);
+
+router.get('/roles/:name', middleware.checkForEditRolesPermission, controller.getRoleByName);
+
+router.get('/roles/edit/:name', middleware.checkForEditRolesPermission, controller.getEditRole);
+
+router.get('/roles-add', middleware.checkForEditRolesPermission, controller.getAddRole);
+
+router.get('/users', middleware.checkForEditUsersPermission, controller.getUsers);
+
+router.get('/users/roles/:name', middleware.checkForEditUsersPermission, controller.getUserRoles);
+
+router.get('/users/:name', middleware.checkForEditUsersPermission, controller.getUserByName);
+
+router.get('/users-add', middleware.checkForEditUsersPermission, controller.getAddUser);
 
 router.post('/hook/bolt/app-starting', controller.postHookBoltAppStarting);
-
-router.get('/roles', controller.getRoles);
-
-router.get('/roles/:name', controller.getRoleByName);
-
-router.get('/roles/edit/:name', controller.getEditRole);
-
-router.get('/roles-add', controller.getAddRole);
-
-router.get('/users', controller.getUsers);
-
-router.get('/users/roles/:name', controller.getUserRoles);
-
-router.get('/users/:name', controller.getUserByName);
-
-router.get('/users-add', controller.getAddUser);
 
 //------404
 router.get('*', controller.get404);

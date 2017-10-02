@@ -1,19 +1,28 @@
 <div class="view-port clearfix" id="chat">
   <div class="view bg-white">
     <div data-init-list-view="ioslist" class="list-view boreded no-top-border">
-      <span>
-        <br />
-        Specify roles that can interact with this app
-        <br />
-        {{#if rolesHasElements}}
-        <select class="cs-select cs-skin-slide" data-init-plugin="cs-select" id="select_role">
-          {{#each roles}}
-          <option value="{{name}}">{{displayName}}</option>
-          {{/each}}
-        </select>
-      </span>
-
-      <span>&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-primary btn-cons m-t-10" name="add_role" id="add_role"><i class="fa fa-plus"></i> Add</button></span>
+      {{#if rolesHasElements}}
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-sm-4">
+            <form role="form">
+              <div class="form-group ">
+                <select class="full-width  m-t-10" data-init-plugin="select2" id="select_role">
+                  <optgroup label="Available roles">
+                    {{#each roles}}
+                    <option value="{{name}}">{{displayName}}</option>
+                    {{/each}}
+                  </optgroup>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="col-sm-4">
+            <button class="btn btn-primary btn-cons m-t-10" name="add_role" id="add_role"><i class="fa fa-plus"></i> Add Role</button>
+          </div>
+          <div class="col-sm-4"></div>
+        </div>
+      </div>
       {{/if}}
 
       <div class="checkbox check-success checkbox-circle">
